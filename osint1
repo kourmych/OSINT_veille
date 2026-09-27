@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OSINT Veille - Lanceur</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1c3a70 0%, #2d5a8c 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            padding: 50px;
+            max-width: 700px;
+            width: 100%;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .logo {
+            font-size: 32px;
+            font-weight: bold;
+            color: #1c3a70;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            color: #666;
+            font-size: 14px;
+            margin-bottom: 5px;
+        }
+
+        .status-indicator {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #4CAF50;
+            margin-right: 5px;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 10px;
+            font-weight: 600;
+            color: #333;
+            font-size: 14px;
+        }
+
+        .keywords-container {
+            background: #f5f5f5;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 15px;
+            min-height: 100px;
+        }
+
+        .keyword-input-group {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+
+        input[type="text"] {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+
+        input[type="text"]:focus {
+            outline: none;
+            border-color: #1c3a70;
+            box-shadow: 0 0 5px rgba(28, 58, 112, 0.3);
+        }
+
+        .btn {
+            padding: 10px 16px;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .btn-add {
+            background: #4CAF50;
+            color: white;
+        }
+
+        .btn-add:hover {
+            background: #45a049;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(76, 175, 80, 0.3);
+        }
+
+        .btn-remove {
+            background: #f44336;
+            color: white;
+            padding: 8px 12px;
+            font-size: 12px;
+        }
+
+        .btn-remove:hover {
+            background: #da190b;
+        }
+
+        .keywords-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 15px;
+        }
+
+        .keyword-tag {
+            background: #1c3a70;
+            color: white;
+            padding: 8px 12px;
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 13px;
+        }
+
+        .keyword-tag button {
+            background: none;
+            border: none;
+            color: white;
+            cursor: pointer;
+            font-size: 16px;
+            padding: 0;
+            display: flex;
+            align-items: center;
+        }
+
+        .keyword-tag button:hover {
+            color: #ff6b6b;
+        }
+
+        .btn-launch {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #1c3a70 0%, #2d5a8c 100%);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-top: 20px;
+        }
+
+        .btn-launch:hover:not(:disabled) {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(28, 58, 112, 0.4);
+        }
+
+        .btn-launch:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+
+        .status {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 6px;
+            display: none;
+            font-size: 14px;
+        }
+
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+            display: block;
+        }
+
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+            display: block;
+        }
+
+        .status.loading {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+            display: block;
+        }
+
+        .loading-spinner {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 3px solid #0c5460;
+            border-top-color: transparent;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin-right: 8px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .status-message {
+            margin-top: 10px;
+            font-weight: 500;
+        }
+
+        .timer {
+            font-size: 12px;
+            color: #666;
+            margin-top: 5px;
+        }
+
+        .info-box {
+            background: #e3f2fd;
+            border-left: 4px solid #1c3a70;
+            padding: 12px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+            font-size: 13px;
+            color: #1c3a70;
+        }
+
+        .default-keywords {
+            display: none;
+            background: #fff3e0;
+            border: 1px solid #ffb74d;
+            padding: 10px;
+            border-radius: 6px;
+            margin-top: 10px;
+            font-size: 12px;
+            color: #e65100;
+        }
+
+        .default-keywords.active {
+            display: block;
+        }
+
+        a {
+            color: #1c3a70;
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="logo">🔍 OSINT Veille</div>
+            <div class="subtitle">
+                <span class="status-indicator"></span>
+                Lanceur automatisé d'analyses
+            </div>
+        </div>
+
+        <div class="info-box">
+            ℹ️ Ajoute des mots-clés pour personnaliser ta recherche. Pas de mots-clés = utilisation des paramètres par défaut.
+        </div>
+
+        <form id="osintForm">
+            <div class="form-group">
+                <label for="keywordInput">Mots-clés de recherche</label>
+                <div class="keywords-container">
+                    <div class="keywords-list" id="keywordsList"></div>
+                    <div class="keyword-input-group">
+                        <input 
+                            type="text" 
+                            id="keywordInput" 
+                            placeholder="Ex: Houthis attack, Israeli strike..."
+                            autocomplete="off"
+                        >
+                        <button type="button" class="btn btn-add" id="addKeywordBtn">+ Ajouter</button>
+                    </div>
+                </div>
+                <div class="default-keywords" id="defaultKeywords">
+                    ⚠️ Aucun mot-clé personnalisé. Les recherches par défaut seront utilisées.
+                </div>
+            </div>
+
+            <button type="submit" class="btn-launch" id="launchBtn">
+                🚀 Lancer l'analyse OSINT
+            </button>
+        </form>
+
+        <div class="status" id="status">
+            <div class="status-message" id="statusMessage"></div>
+            <div class="timer" id="timer"></div>
+        </div>
+    </div>
+
+    <script>
+        // ⚠️ REMPLACE CETTE URL PAR TON ID DE DÉPLOIEMENT ⚠️
+        const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwp6PkfO-pgkUvRpsZOAlPVbjRDCKWngWrd5rU9oIe309T40hgnTEVPIagVax1iB3Tk/exec';
+
+        const keywordInput = document.getElementById('keywordInput');
+        const addKeywordBtn = document.getElementById('addKeywordBtn');
+        const keywordsList = document.getElementById('keywordsList');
+        const launchBtn = document.getElementById('launchBtn');
+        const form = document.getElementById('osintForm');
+        const status = document.getElementById('status');
+        const statusMessage = document.getElementById('statusMessage');
+        const timer = document.getElementById('timer');
+        const defaultKeywordsBox = document.getElementById('defaultKeywords');
+
+        let keywords = [];
+        let startTime = null;
+
+        // Charger les mots-clés depuis localStorage
+        function loadKeywords() {
+            const saved = localStorage.getItem('osint_keywords');
+            if (saved) {
+                keywords = JSON.parse(saved);
+                renderKeywords();
+            }
+            updateDefaultKeywordsBox();
+        }
+
+        // Sauvegarder les mots-clés
+        function saveKeywords() {
+            localStorage.setItem('osint_keywords', JSON.stringify(keywords));
+        }
+
+        // Ajouter un mot-clé
+        function addKeyword() {
+            const value = keywordInput.value.trim();
+            if (!value) {
+                alert('Veuillez entrer un mot-clé');
+                return;
+            }
+            if (keywords.includes(value)) {
+                alert('Ce mot-clé existe déjà');
+                return;
+            }
+            keywords.push(value);
+            keywordInput.value = '';
+            keywordInput.focus();
+            saveKeywords();
+            renderKeywords();
+            updateDefaultKeywordsBox();
+        }
+
+        // Supprimer un mot-clé
+        function removeKeyword(index) {
+            keywords.splice(index, 1);
+            saveKeywords();
+            renderKeywords();
+            updateDefaultKeywordsBox();
+        }
+
+        // Afficher les mots-clés
+        function renderKeywords() {
+            keywordsList.innerHTML = keywords.map((kw, i) => `
+                <div class="keyword-tag">
+                    ${kw}
+                    <button type="button" onclick="removeKeyword(${i})">✕</button>
+                </div>
+            `).join('');
+        }
+
+        // Mettre à jour la box d'avertissement
+        function updateDefaultKeywordsBox() {
+            if (keywords.length === 0) {
+                defaultKeywordsBox.classList.add('active');
+            } else {
+                defaultKeywordsBox.classList.remove('active');
+            }
+        }
+
+        // Ajouter un mot-clé au clic du bouton
+        addKeywordBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            addKeyword();
+        });
+
+        // Ajouter un mot-clé à la pression d'Entrée
+        keywordInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                addKeyword();
+            }
+        });
+
+        // Mettre à jour le timer
+        function updateTimer() {
+            if (!startTime) return;
+            const elapsed = Math.floor((Date.now() - startTime) / 1000);
+            const mins = Math.floor(elapsed / 60);
+            const secs = elapsed % 60;
+            timer.textContent = `⏱️ Temps écoulé: ${mins}m ${secs}s`;
+        }
+
+        // Lancer l'analyse
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            launchBtn.disabled = true;
+            status.className = 'status loading';
+            statusMessage.innerHTML = '<span class="loading-spinner"></span>Lancement de l\'analyse OSINT...';
+            timer.textContent = '';
+            startTime = Date.now();
+
+            const timerInterval = setInterval(updateTimer, 1000);
+
+            try {
+                const response = await fetch(APPS_SCRIPT_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        action: 'runOSINT',
+                        keywords: keywords
+                    })
+                });
+
+                const data = await response.json();
+                clearInterval(timerInterval);
+
+                if (data.success) {
+                    const elapsed = Math.floor((Date.now() - startTime) / 1000);
+                    const mins = Math.floor(elapsed / 60);
+                    const secs = elapsed % 60;
+
+                    status.className = 'status success';
+                    statusMessage.innerHTML = `
+                        ✅ <strong>Analyse réussie!</strong><br>
+                        📊 ${data.articlesCount} article(s) trouvé(s)<br>
+                        <a href="${data.sheetUrl}" target="_blank">📋 Ouvrir le Sheet</a><br>
+                        ⏱️ Durée totale: ${mins}m ${secs}s
+                    `;
+                    timer.textContent = '';
+                } else {
+                    status.className = 'status error';
+                    statusMessage.innerHTML = `
+                        ❌ <strong>Erreur</strong><br>
+                        ${data.error || 'Une erreur est survenue'}
+                    `;
+                }
+            } catch (error) {
+                clearInterval(timerInterval);
+                status.className = 'status error';
+                statusMessage.innerHTML = `
+                    ❌ <strong>Erreur de connexion</strong><br>
+                    ${error.message}<br>
+                    <small>Vérifie que l'URL du script est correcte</small>
+                `;
+            } finally {
+                launchBtn.disabled = false;
+            }
+        });
+
+        // Charger les mots-clés au démarrage
+        loadKeywords();
+    </script>
+</body>
+</html>
